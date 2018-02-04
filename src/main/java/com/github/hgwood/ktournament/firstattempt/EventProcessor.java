@@ -1,9 +1,6 @@
 package com.github.hgwood.ktournament.firstattempt;
 
-import com.github.hgwood.ktournament.PlayerJoinedTournament;
-import com.github.hgwood.ktournament.firstattempt.PlayerRequestsJoin;
-import com.github.hgwood.ktournament.firstattempt.TournamentNotFound;
-import com.github.hgwood.ktournament.firstattempt.TournamentOpened;
+import com.github.hgwood.ktournament.secondattempt.PlayerJoinedTournament;
 
 public interface EventProcessor {
     void process(TournamentOpened event);

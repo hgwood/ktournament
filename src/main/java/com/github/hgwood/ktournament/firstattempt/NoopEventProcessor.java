@@ -1,6 +1,6 @@
 package com.github.hgwood.ktournament.firstattempt;
 
-import com.github.hgwood.ktournament.PlayerJoinedTournament;
+import com.github.hgwood.ktournament.secondattempt.PlayerJoinedTournament;
 
 public class NoopEventProcessor implements EventProcessor {
 

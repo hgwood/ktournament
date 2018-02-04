@@ -1,4 +1,4 @@
-package com.github.hgwood.ktournament;
+package com.github.hgwood.ktournament.secondattempt;
 
 import lombok.Value;
 

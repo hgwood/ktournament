@@ -1,5 +1,11 @@
 package com.github.hgwood.ktournament;
 
-public interface Event {
+import lombok.Value;
 
+import java.util.UUID;
+
+@Value
+public class Event {
+    UUID commandId;
+    DomainEvent payload;
 }

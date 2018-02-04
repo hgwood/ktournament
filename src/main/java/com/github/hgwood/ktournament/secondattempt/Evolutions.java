@@ -1,4 +1,4 @@
-package com.github.hgwood.ktournament;
+package com.github.hgwood.ktournament.secondattempt;
 
 import com.github.hgwood.ktournament.firstattempt.OpenTournament;
 import com.github.hgwood.ktournament.firstattempt.TournamentOpened;
