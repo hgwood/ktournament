@@ -54,10 +54,10 @@ public class KTournamentJoinLogic {
     private static void buildTopology(StreamsBuilder builder) {
         StoreSupplier store = Stores.persistentKeyValueStore("myValueTransformState");
         KStream<UUID, Command> commands = builder.stream("commands");
-        KStream<UUID, Event> eventsProduced = commands.transform(Decide::new, "myValueTransformState");
-        KStream<UUID, Event> eventsFromMaster = builder.stream("tournament-creator-events");
-        eventsFromMaster.merge(eventsProduced).process(Evolve::new, "myValueTransformState");
-        eventsProduced.to("tournament-join-events");
+        KStream<UUID, Event> ownEvents = commands.transform(Decide::new, "myValueTransformState");
+        KStream<UUID, Event> creatorEvents = builder.stream("tournament-creator-events");
+        creatorEvents.merge(ownEvents).process(Evolve::new, "myValueTransformState");
+        ownEvents.to("tournament-join-events");
     }
 
     public static class Decide implements Transformer<UUID, Command, KeyValue<UUID, Event>> {
@@ -104,7 +104,7 @@ public class KTournamentJoinLogic {
         public void process(UUID key, Event value) {
             TournamentJoinLogic.State state = store.get(key);
             TournamentJoinLogic.State newState = logic.evolve(state, value.getPayload());
-            store.put(key, newState);
+            if (state != newState) store.put(key, newState);
         }
 
         @Override
