@@ -9,13 +9,20 @@ import java.util.UUID;
 public class TournamentJoinLogic {
 
     public List<DomainEvent> decide(State state, Command command) {
+        if (command instanceof OpenTournamentToPlayers) return decide(state, (OpenTournamentToPlayers) command);
         if (command instanceof JoinTournamentCommand) return decide(state, (JoinTournamentCommand) command);
         if (command instanceof StartTournamentCommand) return decide(state, (StartTournamentCommand) command);
         return List.empty();
     }
 
+    public List<DomainEvent> decide(State state, OpenTournamentToPlayers command) {
+        return List.of(new TournamentCreated(command.getMaxPlayers()));
+    }
+
     public List<DomainEvent> decide(State state, JoinTournamentCommand command) {
-        if (!state.acceptingPlayers) {
+        if (state == null) {
+            return List.of(new CommandNotApplicableToNonExistantEntity(command));
+        } else if (!state.acceptingPlayers) {
             return List.of(new TournamentIsNotAcceptingPlayers());
         } else if (state.playersJoined >= state.maxPlayers) {
             return List.of(new TournamentIsFull(command.playerId, state.playersJoined, state.maxPlayers));
@@ -72,6 +79,11 @@ public class TournamentJoinLogic {
     }
 
     @Value
+    public static class OpenTournamentToPlayers implements Command {
+        int maxPlayers;
+    }
+
+    @Value
     public static class StartTournamentCommand implements Command {
 
     }
@@ -79,6 +91,11 @@ public class TournamentJoinLogic {
     @Value
     public static class JoinTournamentCommand implements Command {
         UUID playerId;
+    }
+
+    @Value
+    public static class TournamentIdIsAlreadyRegistered implements DomainEvent {
+        UUID tournamentId;
     }
 
     @Value

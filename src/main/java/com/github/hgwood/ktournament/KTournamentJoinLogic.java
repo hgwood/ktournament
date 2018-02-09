@@ -9,6 +9,7 @@ import org.apache.kafka.streams.kstream.Transformer;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.StoreSupplier;
 import org.apache.kafka.streams.state.Stores;
 
@@ -52,12 +53,12 @@ public class KTournamentJoinLogic {
     }
 
     private static void buildTopology(StreamsBuilder builder) {
-        StoreSupplier store = Stores.persistentKeyValueStore("myValueTransformState");
-        KStream<UUID, Command> commands = builder.stream("commands");
-        KStream<UUID, Event> ownEvents = commands.transform(Decide::new, "myValueTransformState");
-        KStream<UUID, Event> creatorEvents = builder.stream("tournament-creator-events");
-        creatorEvents.merge(ownEvents).process(Evolve::new, "myValueTransformState");
-        ownEvents.to("tournament-join-events");
+        StoreSupplier store = Stores.persistentKeyValueStore("tournament-joining-state");
+
+        KStream<UUID, Command> commands = builder.stream("tournament-joining-commands");
+        KStream<UUID, Event> ownEvents = commands.transform(Decide::new, "tournament-joining-state");
+        ownEvents.process(Evolve::new, "tournament-joining-state");
+        ownEvents.to("tournament-joining-events");
     }
 
     public static class Decide implements Transformer<UUID, Command, KeyValue<UUID, Event>> {
@@ -67,12 +68,15 @@ public class KTournamentJoinLogic {
         @Override
         public void init(ProcessorContext context) {
             this.context = context;
-            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("myValueTransformState");
+            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("tournament-joining-state");
         }
 
         @Override
         public KeyValue<UUID, Event> transform(UUID key, Command value) {
+            // key cannot be null here otherwise it would not land in the same partition as the next commands for the
+            // same aggregate ; that means aggregate id is assigned upstream
             TournamentJoinLogic.State state = store.get(key);
+            // state might be null here! every command has to check for it
             logic.decide(state, value)
                 .map(domainEvent -> new Event(key, domainEvent))
                 .forEach(event -> this.context.forward(UUID.randomUUID(), event));
@@ -97,12 +101,13 @@ public class KTournamentJoinLogic {
         @Override
         public void init(ProcessorContext context) {
             this.context = context;
-            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("myValueTransformState");
+            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("tournament-joining-state");
         }
 
         @Override
         public void process(UUID key, Event value) {
             TournamentJoinLogic.State state = store.get(key);
+            if (state == null) context.forward(UUID.randomUUID(), new NonExistantEntityReferencedInEvent(key, value));
             TournamentJoinLogic.State newState = logic.evolve(state, value.getPayload());
             if (state != newState) store.put(key, newState);
         }
