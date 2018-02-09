@@ -1,10 +1,8 @@
 package com.github.hgwood.ktournament;
 
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Transformer;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
@@ -53,11 +51,20 @@ public class KTournamentJoinLogic {
     }
 
     private static void buildTopology(StreamsBuilder builder) {
-        StoreSupplier store = Stores.persistentKeyValueStore("tournament-joining-state");
+        KTable<UUID, TournamentJoinLogic.State> entities = builder.<UUID, Event>stream("tournament-joining-events")
+            .groupByKey()
+            .aggregate(
+                () -> null,
+                (id, event, entity) -> logic.evolve(entity, event.getPayload()));
+
+
+
+        //StoreSupplier store = Stores.persistentKeyValueStore("tournament-joining-state");
 
         KStream<UUID, Command> commands = builder.stream("tournament-joining-commands");
-        KStream<UUID, Event> ownEvents = commands.transform(Decide::new, "tournament-joining-state");
-        ownEvents.process(Evolve::new, "tournament-joining-state");
+        KStream<UUID, Event> ownEvents = commands.transform(Decide::new, entities.queryableStoreName());
+        ownEvents.process(Evolve::new, entities.queryableStoreName());
+        // OK but then all events are processed twice, need deduplication
         ownEvents.to("tournament-joining-events");
     }
 
@@ -85,6 +92,7 @@ public class KTournamentJoinLogic {
 
         @Override
         public KeyValue<UUID, Event> punctuate(long timestamp) {
+            // use this to take a snapshot of the state
             return null;
         }
 
