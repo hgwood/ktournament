@@ -9,7 +9,7 @@ import ratpack.server.ServerConfig;
 
 public class App {
     public static void main(String[] args) throws Exception {
-        RatpackServer.start(server -> server
+        /*RatpackServer.start(server -> server
             .serverConfig(ServerConfig.embedded())
             .registryOf(registry -> {
                 ProducerConfig producerConfig = new ProducerConfig(HashMap.of(
@@ -21,6 +21,6 @@ public class App {
                 .get(":name", ctx -> ctx.render("Hello " + ctx.getPathTokens().get("name") + "!"))
                 .post("commands", ctx -> ctx.)
             )
-        );
+        );*/
     }
 }

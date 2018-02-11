@@ -8,6 +8,16 @@ public interface CreateTournamentResponse {
         String tournamentId;
         String name;
         int maxPlayers;
+
+        @Override
+        public String getId() {
+            return null;
+        }
+
+        @Override
+        public String getEntity() {
+            return null;
+        }
     }
 
 }

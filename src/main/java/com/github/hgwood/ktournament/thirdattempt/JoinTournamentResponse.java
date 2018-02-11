@@ -19,5 +19,15 @@ public interface JoinTournamentResponse {
         String commandId;
         String tournamentId;
         String playerId;
+
+        @Override
+        public String getId() {
+            return null;
+        }
+
+        @Override
+        public String getEntity() {
+            return null;
+        }
     }
 }

@@ -1,20 +1,27 @@
 package com.github.hgwood.ktournament;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.hgwood.ktournament.support.json.JsonSerde;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.*;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Transformer;
+import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.processor.Processor;
 import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.StateStore;
 import org.apache.kafka.streams.state.KeyValueStore;
-import org.apache.kafka.streams.state.StoreBuilder;
-import org.apache.kafka.streams.state.StoreSupplier;
-import org.apache.kafka.streams.state.Stores;
 
 import java.util.Properties;
 import java.util.UUID;
 
 public class KTournamentJoinLogic {
+
+    public static ObjectMapper objectMapper = new ObjectMapper();
+    public static Serde<UUID> uuidSerde = new JsonSerde<>(objectMapper, new TypeReference<UUID>() {});
+    public static Serde<Command> commandSerde = new JsonSerde<>(objectMapper, new TypeReference<Command>() {});
+    public static Serde<Event> eventSerde = new JsonSerde<>(objectMapper, new TypeReference<Event>() {});
+    public static Serde<TournamentJoinLogic.State> stateSerde = new JsonSerde<>(objectMapper, new TypeReference<TournamentJoinLogic.State>() {});
 
     private static TournamentJoinLogic logic = new TournamentJoinLogic();
 
@@ -22,8 +29,11 @@ public class KTournamentJoinLogic {
         final Properties streamsConfiguration = new Properties();
         // Give the Streams application a unique name.  The name must be unique in the Kafka cluster
         // against which the application is run.
+        streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "wordcount-lambda-example");
         streamsConfiguration.put(StreamsConfig.CLIENT_ID_CONFIG, "wordcount-lambda-example-client");
+        streamsConfiguration.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        streamsConfiguration.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG, DeserExceptionHandler.class);
         final StreamsBuilder builder = new StreamsBuilder();
 
         buildTopology(builder);
@@ -51,21 +61,23 @@ public class KTournamentJoinLogic {
     }
 
     private static void buildTopology(StreamsBuilder builder) {
-        KTable<UUID, TournamentJoinLogic.State> entities = builder.<UUID, Event>stream("tournament-joining-events")
-            .groupByKey()
-            .aggregate(
-                () -> null,
-                (id, event, entity) -> logic.evolve(entity, event.getPayload()));
+        KTable<UUID, TournamentJoinLogic.State> entities =
+            builder.stream("tournament-joining-events", Consumed.with(uuidSerde, eventSerde))
+                .groupByKey()
+                .aggregate(
+                    () -> (TournamentJoinLogic.State) null,
+                    (UUID id, Event event, TournamentJoinLogic.State entity) -> logic.evolve(entity, event.getPayload()),
+                    Materialized.<UUID, TournamentJoinLogic.State, KeyValueStore<org.apache.kafka.common.utils.Bytes,byte[]>>as("tournament-joining-store").withKeySerde(uuidSerde).withValueSerde(stateSerde));
 
 
 
         //StoreSupplier store = Stores.persistentKeyValueStore("tournament-joining-state");
 
-        KStream<UUID, Command> commands = builder.stream("tournament-joining-commands");
-        KStream<UUID, Event> ownEvents = commands.transform(Decide::new, entities.queryableStoreName());
-        ownEvents.process(Evolve::new, entities.queryableStoreName());
+        KStream<UUID, Command> commands = builder.stream("tournament-joining-commands", Consumed.with(uuidSerde, commandSerde));
+        KStream<UUID, Event> ownEvents = commands.transform(Decide::new, "tournament-joining-store");
+        ownEvents.process(Evolve::new, "tournament-joining-store");
         // OK but then all events are processed twice, need deduplication
-        ownEvents.to("tournament-joining-events");
+        ownEvents.to("tournament-joining-events", Produced.with(uuidSerde, eventSerde));
     }
 
     public static class Decide implements Transformer<UUID, Command, KeyValue<UUID, Event>> {
@@ -75,7 +87,7 @@ public class KTournamentJoinLogic {
         @Override
         public void init(ProcessorContext context) {
             this.context = context;
-            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("tournament-joining-state");
+            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("tournament-joining-store");
         }
 
         @Override
@@ -109,13 +121,16 @@ public class KTournamentJoinLogic {
         @Override
         public void init(ProcessorContext context) {
             this.context = context;
-            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("tournament-joining-state");
+            this.store = (KeyValueStore<UUID, TournamentJoinLogic.State>) context.getStateStore("tournament-joining-store");
         }
 
         @Override
         public void process(UUID key, Event value) {
             TournamentJoinLogic.State state = store.get(key);
-            if (state == null) context.forward(UUID.randomUUID(), new NonExistantEntityReferencedInEvent(key, value));
+            if (state == null)  {
+                //context.forward(UUID.randomUUID(), new NonExistantEntityReferencedInEvent(key, value));
+                //throw new NullPointerException("event referencing non existant entity");
+            }
             TournamentJoinLogic.State newState = logic.evolve(state, value.getPayload());
             if (state != newState) store.put(key, newState);
         }
