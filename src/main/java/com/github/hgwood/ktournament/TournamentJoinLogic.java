@@ -8,18 +8,18 @@ import java.util.UUID;
 
 public class TournamentJoinLogic {
 
-    public List<DomainEvent> decide(State state, Command command) {
+    public List<DomainEvent> decide(State1 state, Command command) {
         if (command instanceof OpenTournamentToPlayers) return decide(state, (OpenTournamentToPlayers) command);
         if (command instanceof JoinTournamentCommand) return decide(state, (JoinTournamentCommand) command);
         if (command instanceof StartTournamentCommand) return decide(state, (StartTournamentCommand) command);
         return List.empty();
     }
 
-    public List<DomainEvent> decide(State state, OpenTournamentToPlayers command) {
+    public List<DomainEvent> decide(State1 state, OpenTournamentToPlayers command) {
         return List.of(new TournamentCreated(command.getMaxPlayers()));
     }
 
-    public List<DomainEvent> decide(State state, JoinTournamentCommand command) {
+    public List<DomainEvent> decide(State1 state, JoinTournamentCommand command) {
         if (state == null) {
             return List.of(new CommandNotApplicableToNonExistantEntity(command));
         } else if (!state.acceptingPlayers) {
@@ -39,7 +39,7 @@ public class TournamentJoinLogic {
         }
     }
 
-    public List<DomainEvent> decide(State state, StartTournamentCommand command) {
+    public List<DomainEvent> decide(State1 state, StartTournamentCommand command) {
         if (state.playersJoined < 2) {
             return List.of(new NotEnoughPlayersInTournamentToStart(state.playersJoined));
         } else {
@@ -47,32 +47,32 @@ public class TournamentJoinLogic {
         }
     }
 
-    public State evolve(State state, DomainEvent event) {
+    public State1 evolve(State1 state, DomainEvent event) {
         if (event instanceof TournamentCreated) return evolve(state, (TournamentCreated) event);
         if (event instanceof TournamentJoinedByPlayer) return evolve(state, (TournamentJoinedByPlayer) event);
         if (event instanceof TournamentStarted) return evolve(state, (TournamentStarted) event);
         return state;
     }
 
-    public State evolve(State state, TournamentCreated event) {
-        return State.builder()
+    public State1 evolve(State1 state, TournamentCreated event) {
+        return State1.builder()
             .acceptingPlayers(true)
             .playersJoined(0)
             .maxPlayers(event.maxPlayers)
             .build();
     }
 
-    public State evolve(State state, TournamentJoinedByPlayer event) {
+    public State1 evolve(State1 state, TournamentJoinedByPlayer event) {
         return state.toBuilder().playersJoined(event.playersAfter).build();
     }
 
-    public State evolve(State state, TournamentStarted event) {
+    public State1 evolve(State1 state, TournamentStarted event) {
         return state.toBuilder().acceptingPlayers(false).build();
     }
 
     @Builder(toBuilder = true)
     @Value
-    public static class State {
+    public static class State1 implements State {
         boolean acceptingPlayers;
         int playersJoined;
         int maxPlayers;
@@ -80,16 +80,19 @@ public class TournamentJoinLogic {
 
     @Value
     public static class OpenTournamentToPlayers implements Command {
+        UUID id;
         int maxPlayers;
     }
 
     @Value
     public static class StartTournamentCommand implements Command {
+        UUID id;
 
     }
 
     @Value
     public static class JoinTournamentCommand implements Command {
+        UUID id;
         UUID playerId;
     }
 

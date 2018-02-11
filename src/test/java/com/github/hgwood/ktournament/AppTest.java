@@ -12,9 +12,9 @@ public class AppTest {
 
     @Test public void test() throws Exception {
         try (KafkaProducer<UUID, Command> producer = new KafkaProducer<>(HashMap.<String, Object>of(ProducerConfig
-            .BOOTSTRAP_SERVERS_CONFIG, "localhost:9092").toJavaMap(), KTournamentJoinLogic.uuidSerde.serializer(), KTournamentJoinLogic.commandSerde.serializer())){
+            .BOOTSTRAP_SERVERS_CONFIG, "192.168.99.100:9092").toJavaMap(), KTournamentJoinLogic.uuidSerde.serializer(), KTournamentJoinLogic.commandSerde.serializer())){
             producer.send(new ProducerRecord<>("tournament-joining-commands", UUID.randomUUID(), new TournamentJoinLogic
-                .OpenTournamentToPlayers(4))).get();
+                .OpenTournamentToPlayers(UUID.randomUUID(), 4))).get();
         }
 
     }
