@@ -72,8 +72,7 @@ public class KTournamentJoinLogic {
                         return stateEnvelope.next(
                             event.getId(),
                             logic.evolve(stateEnvelope.getPayload(), event.getPayload()));
-                    }
-                        ,
+                    },
                     Materialized.<UUID, StateEnvelope<TournamentJoinLogic.State1>, KeyValueStore<org.apache.kafka.common.utils.Bytes,byte[]>>as("tournament-joining-store").withKeySerde(uuidSerde).withValueSerde(stateSerde));
 
 
@@ -107,7 +106,7 @@ public class KTournamentJoinLogic {
             logic.decide(state == null ? null : state.getPayload(), value)
                 .map(domainEvent -> new Event(UUID.randomUUID(), value.getId(), domainEvent))
                 .forEach(event -> this.context.forward(key, event));
-            // produce a command report with: entity state id, produced event ids
+            // produce a command report with: entity state id, produced event ids => includes this in events
             return null;
         }
 
@@ -135,18 +134,18 @@ public class KTournamentJoinLogic {
         @Override
         public void process(UUID key, Event value) {
             System.out.println(format("entity %s: applying event %s from own processing", key, value.getId()));
-            StateEnvelope<TournamentJoinLogic.State1> enveloppe = store.get(key);
-            if (enveloppe == null) {
-                enveloppe = StateEnvelope.zero();
+            StateEnvelope<TournamentJoinLogic.State1> envelope = store.get(key);
+            if (envelope == null) {
+                envelope = StateEnvelope.zero();
             }
-            TournamentJoinLogic.State1 state = enveloppe.getPayload();
+            TournamentJoinLogic.State1 state = envelope.getPayload();
             if (state == null)  {
                 //context.forward(UUID.randomUUID(), new NonExistantEntityReferencedInEvent(key, value));
                 //throw new NullPointerException("event referencing non existant entity");
             }
             TournamentJoinLogic.State1 newState = logic.evolve(state, value.getPayload());
-            if (state != newState) store.put(key, enveloppe.next(value.getId(), newState));
-            // produced event report with: previous version, new version, entity id
+            if (state != newState) store.put(key, envelope.next(value.getId(), newState));
+            // produced event report with: previous version, new version, entity id => include this in produced states
         }
 
         @Override
