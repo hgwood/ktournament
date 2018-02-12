@@ -20,15 +20,15 @@ public class Decide implements Transformer<UUID, CommandEnvelope<TournamentJoini
     }
 
     @Override
-    public KeyValue<UUID, EventEnvelope<TournamentJoiningState>> transform(UUID key, CommandEnvelope<TournamentJoiningState> value) {
-        System.out.println(format("entity %s: applying command %s", key, value.getId()));
+    public KeyValue<UUID, EventEnvelope<TournamentJoiningState>> transform(UUID entityId, CommandEnvelope<TournamentJoiningState> command) {
+        System.out.println(format("entity %s: applying command %s", entityId, command.getId()));
         // key cannot be null here otherwise it would not land in the same partition as the next commands for the
         // same aggregate ; that means aggregate id is assigned upstream
-        StateEnvelope<TournamentJoiningState> state = store.get(key);
+        StateEnvelope<TournamentJoiningState> state = store.get(entityId);
         // payload might be null here! every command has to check for it
-        value.getPayload().decide(state == null ? null : state.getPayload())
-            .map(event -> new EventEnvelope<TournamentJoiningState>(UUID.randomUUID(), value.getId(), event))
-            .forEach(event -> this.context.forward(key, event));
+        command.getPayload().decide(state == null ? null : state.getPayload())
+            .map(event -> new EventEnvelope<TournamentJoiningState>(UUID.randomUUID(), command.getId(), event))
+            .forEach(event -> this.context.forward(entityId, event));
         // produce a command report with: entity state id, produced event ids => includes this in events
         return null;
     }

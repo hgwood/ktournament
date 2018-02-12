@@ -21,22 +21,22 @@ public class Evolve implements Processor<UUID, EventEnvelope<TournamentJoiningSt
     }
 
     @Override
-    public void process(UUID key, EventEnvelope<TournamentJoiningState> value) {
-        if (this.buffer.get(value.getId()) != null) {
-            this.buffer.delete(value.getId());
+    public void process(UUID entityId, EventEnvelope<TournamentJoiningState> event) {
+        if (this.buffer.get(event.getId()) != null) {
+            this.buffer.delete(event.getId());
             return;
         }
-        System.out.println(format("entity %s: applying event %s from own processing", key, value.getId()));
-        StateEnvelope<TournamentJoiningState> envelope = store.get(key);
+        System.out.println(format("entity %s: applying event %s from own processing", entityId, event.getId()));
+        StateEnvelope<TournamentJoiningState> envelope = store.get(entityId);
         if (envelope == null) {
-            envelope = StateEnvelope.zero();
+            envelope = StateEnvelope.zero(entityId);
         }
         TournamentJoiningState state = envelope.getPayload();
         // state might be null, event have to handle it
-        TournamentJoiningState newState = value.getPayload().evolve(state);
-        if (state != newState) store.put(key, envelope.next(value.getId(), newState));
+        TournamentJoiningState newState = event.getPayload().evolve(state);
+        if (state != newState) store.put(entityId, envelope.next(event.getId(), newState));
         // produced event report with: previous version, new version, entity id => include this in produced states
-        this.buffer.put(value.getId(), value);
+        this.buffer.put(event.getId(), event);
     }
 
     @Override
