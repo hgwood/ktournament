@@ -12,7 +12,6 @@ import java.util.UUID;
 
 @Value
 public class JoinTournament implements Command<TournamentJoiningState> {
-    UUID id;
     UUID playerId;
 
     @Override

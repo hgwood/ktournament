@@ -14,19 +14,19 @@ public class AppTest {
 
     @Test public void test() throws Exception {
         try (
-            KafkaProducer<UUID, Command<TournamentJoiningState>> producer = new KafkaProducer<>(
+            KafkaProducer<UUID, CommandEnvelope<TournamentJoiningState>> producer = new KafkaProducer<>(
                 HashMap.<String, Object>of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092").toJavaMap(),
                 KTournamentJoinLogic.uuidSerde.serializer(),
                 KTournamentJoinLogic.commandSerde.serializer()
             )
-        ){
+        ) {
             UUID entityId = UUID.randomUUID();
             int maxPlayers = 4;
             producer.send(
                 new ProducerRecord<>(
                     "tournament-joining-commands",
                     entityId,
-                    new OpenTournamentToPlayers(UUID.randomUUID(), maxPlayers)
+                    new CommandEnvelope<>(UUID.randomUUID(), new OpenTournamentToPlayers(maxPlayers))
                 )
             ).get();
             for (int i = 0; i < maxPlayers + 1; i++) {
@@ -34,7 +34,7 @@ public class AppTest {
                     new ProducerRecord<>(
                         "tournament-joining-commands",
                         entityId,
-                        new JoinTournament(UUID.randomUUID(), UUID.randomUUID())
+                        new CommandEnvelope<>(UUID.randomUUID(), new JoinTournament(UUID.randomUUID()))
                     )
                 ).get();
             }

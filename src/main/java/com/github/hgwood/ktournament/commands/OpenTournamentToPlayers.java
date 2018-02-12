@@ -12,7 +12,6 @@ import java.util.UUID;
 
 @Value
 public class OpenTournamentToPlayers implements Command<TournamentJoiningState> {
-    UUID id;
     int maxPlayers;
 
     @Override

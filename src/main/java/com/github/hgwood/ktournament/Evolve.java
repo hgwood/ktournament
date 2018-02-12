@@ -41,7 +41,7 @@ public class Evolve implements Processor<UUID, EventEnvelope<TournamentJoiningSt
 
     @Override
     public void punctuate(long timestamp) {
-        // may use this to take snapshots of states
+        
     }
 
     @Override
