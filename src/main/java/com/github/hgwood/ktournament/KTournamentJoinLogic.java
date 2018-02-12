@@ -7,10 +7,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.processor.Processor;
-import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.*;
-import ratpack.sse.Event;
 
 import java.util.Properties;
 import java.util.UUID;
@@ -73,85 +70,7 @@ public class KTournamentJoinLogic {
         KStream<UUID, EventEnvelope<TournamentJoiningState>> syncEvents = commands.transform(Decide::new, store.name());
         KStream<UUID, EventEnvelope<TournamentJoiningState>> asyncEvents = builder.stream("tournament-joining-events", Consumed.with(uuidSerde, eventSerde));
         syncEvents.merge(asyncEvents).process(Evolve::new, store.name(), buffer.name());
-        // OK but then all events are processed twice, need deduplication
         syncEvents.to("tournament-joining-events", Produced.with(uuidSerde, eventSerde));
-    }
-
-    public static class Decide implements Transformer<UUID, CommandEnvelope<TournamentJoiningState>, KeyValue<UUID, EventEnvelope<TournamentJoiningState>>> {
-        private ProcessorContext context;
-        private KeyValueStore<UUID, StateEnvelope<TournamentJoiningState>> store;
-
-        @Override
-        public void init(ProcessorContext context) {
-            this.context = context;
-            this.store = (KeyValueStore<UUID, StateEnvelope<TournamentJoiningState>>) context.getStateStore("tournament-joining-store");
-        }
-
-        @Override
-        public KeyValue<UUID, EventEnvelope<TournamentJoiningState>> transform(UUID key, CommandEnvelope<TournamentJoiningState> value) {
-            System.out.println(format("entity %s: applying command %s", key, value.getId()));
-            // key cannot be null here otherwise it would not land in the same partition as the next commands for the
-            // same aggregate ; that means aggregate id is assigned upstream
-            StateEnvelope<TournamentJoiningState> state = store.get(key);
-            // payload might be null here! every command has to check for it
-            value.getPayload().decide(state == null ? null : state.getPayload())
-                .map(event -> new EventEnvelope<TournamentJoiningState>(UUID.randomUUID(), value.getId(), event))
-                .forEach(event -> this.context.forward(key, event));
-            // produce a command report with: entity state id, produced event ids => includes this in events
-            return null;
-        }
-
-        @Override
-        public KeyValue<UUID, EventEnvelope<TournamentJoiningState>> punctuate(long timestamp) {
-            return null;
-        }
-
-        @Override
-        public void close() {
-
-        }
-    }
-
-    public static class Evolve implements Processor<UUID, EventEnvelope<TournamentJoiningState>> {
-        private ProcessorContext context;
-        private KeyValueStore<UUID, StateEnvelope<TournamentJoiningState>> store;
-        private KeyValueStore<UUID, EventEnvelope<TournamentJoiningState>> buffer;
-
-        @Override
-        public void init(ProcessorContext context) {
-            this.context = context;
-            this.store = (KeyValueStore<UUID, StateEnvelope<TournamentJoiningState>>) context.getStateStore("tournament-joining-store");
-            this.buffer = (KeyValueStore<UUID, EventEnvelope<TournamentJoiningState>>) context.getStateStore("tournament-joining-sync-buffer");
-        }
-
-        @Override
-        public void process(UUID key, EventEnvelope<TournamentJoiningState> value) {
-            if (this.buffer.get(value.getId()) != null) {
-                this.buffer.delete(value.getId());
-                return;
-            }
-            System.out.println(format("entity %s: applying event %s from own processing", key, value.getId()));
-            StateEnvelope<TournamentJoiningState> envelope = store.get(key);
-            if (envelope == null) {
-                envelope = StateEnvelope.zero();
-            }
-            TournamentJoiningState state = envelope.getPayload();
-            // state might be null, event have to handle it
-            TournamentJoiningState newState = value.getPayload().evolve(state);
-            if (state != newState) store.put(key, envelope.next(value.getId(), newState));
-            // produced event report with: previous version, new version, entity id => include this in produced states
-            this.buffer.put(value.getId(), value);
-        }
-
-        @Override
-        public void punctuate(long timestamp) {
-            // may use this to take snapshots of states
-        }
-
-        @Override
-        public void close() {
-
-        }
     }
 
 }
