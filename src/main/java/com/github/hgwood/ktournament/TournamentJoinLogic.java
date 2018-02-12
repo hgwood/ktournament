@@ -16,7 +16,11 @@ public class TournamentJoinLogic {
     }
 
     public List<DomainEvent> decide(State1 state, OpenTournamentToPlayers command) {
-        return List.of(new TournamentCreated(command.getMaxPlayers()));
+        if (state == null) {
+            return List.of(new TournamentCreated(command.getMaxPlayers()));
+        } else {
+            return List.of(new AttemptToOverwriteAnExistingTournament());
+        }
     }
 
     public List<DomainEvent> decide(State1 state, JoinTournamentCommand command) {
@@ -94,6 +98,11 @@ public class TournamentJoinLogic {
     public static class JoinTournamentCommand implements Command {
         UUID id;
         UUID playerId;
+    }
+
+    @Value
+    public static class AttemptToOverwriteAnExistingTournament implements DomainEvent {
+
     }
 
     @Value
