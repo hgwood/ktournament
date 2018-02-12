@@ -1,5 +1,7 @@
 package com.github.hgwood.ktournament;
 
+import com.github.hgwood.ktournament.commands.JoinTournament;
+import com.github.hgwood.ktournament.commands.OpenTournamentToPlayers;
 import io.vavr.collection.HashMap;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -12,7 +14,7 @@ public class AppTest {
 
     @Test public void test() throws Exception {
         try (
-            KafkaProducer<UUID, Command> producer = new KafkaProducer<>(
+            KafkaProducer<UUID, Command<TournamentJoiningState>> producer = new KafkaProducer<>(
                 HashMap.<String, Object>of(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092").toJavaMap(),
                 KTournamentJoinLogic.uuidSerde.serializer(),
                 KTournamentJoinLogic.commandSerde.serializer()
@@ -24,7 +26,7 @@ public class AppTest {
                 new ProducerRecord<>(
                     "tournament-joining-commands",
                     entityId,
-                    new TournamentJoinLogic.OpenTournamentToPlayers(UUID.randomUUID(), maxPlayers)
+                    new OpenTournamentToPlayers(UUID.randomUUID(), maxPlayers)
                 )
             ).get();
             for (int i = 0; i < maxPlayers + 1; i++) {
@@ -32,7 +34,7 @@ public class AppTest {
                     new ProducerRecord<>(
                         "tournament-joining-commands",
                         entityId,
-                        new TournamentJoinLogic.JoinTournamentCommand(UUID.randomUUID(), UUID.randomUUID())
+                        new JoinTournament(UUID.randomUUID(), UUID.randomUUID())
                     )
                 ).get();
             }

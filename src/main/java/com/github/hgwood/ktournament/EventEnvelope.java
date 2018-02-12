@@ -5,7 +5,8 @@ import lombok.Value;
 import java.util.UUID;
 
 @Value
-public class NonExistantEntityReferencedInEvent implements DomainEvent {
+public class EventEnvelope<T extends State> {
     UUID id;
-    Event event;
+    UUID commandId;
+    Event<T> payload;
 }
