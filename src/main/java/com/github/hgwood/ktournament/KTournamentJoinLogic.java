@@ -68,9 +68,9 @@ public class KTournamentJoinLogic {
         builder.addStateStore(buffer);
 
         KStream<UUID, CommandEnvelope<TournamentJoiningState>> commands = builder.stream("tournament-joining-commands", Consumed.with(uuidSerde, commandSerde));
-        KStream<UUID, EventEnvelope<TournamentJoiningState>> syncEvents = commands.transform(Decide::new, store.name());
+        KStream<UUID, EventEnvelope<TournamentJoiningState>> syncEvents = commands.transform(() -> new Decide<>(), store.name());
         KStream<UUID, EventEnvelope<TournamentJoiningState>> asyncEvents = builder.stream("tournament-joining-events", Consumed.with(uuidSerde, eventSerde));
-        syncEvents.merge(asyncEvents).process(Evolve::new, store.name(), buffer.name());
+        syncEvents.merge(asyncEvents).process(() -> new Evolve<>(), store.name(), buffer.name());
         syncEvents.to("tournament-joining-events", Produced.with(uuidSerde, eventSerde));
     }
 
