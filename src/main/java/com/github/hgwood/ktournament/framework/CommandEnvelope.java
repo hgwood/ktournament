@@ -1,4 +1,4 @@
-package com.github.hgwood.ktournament;
+package com.github.hgwood.ktournament.framework;
 
 import lombok.Value;
 

@@ -1,5 +1,6 @@
-package com.github.hgwood.ktournament;
+package com.github.hgwood.ktournament.joining;
 
+import com.github.hgwood.ktournament.framework.State;
 import lombok.Builder;
 import lombok.Value;
 

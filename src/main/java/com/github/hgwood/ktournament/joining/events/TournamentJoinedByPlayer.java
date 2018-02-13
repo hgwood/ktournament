@@ -1,13 +1,13 @@
-package com.github.hgwood.ktournament.events;
+package com.github.hgwood.ktournament.joining.events;
 
-import com.github.hgwood.ktournament.Event;
-import com.github.hgwood.ktournament.TournamentJoiningState;
+import com.github.hgwood.ktournament.joining.TournamentJoiningEvent;
+import com.github.hgwood.ktournament.joining.TournamentJoiningState;
 import lombok.Value;
 
 import java.util.UUID;
 
 @Value
-public class TournamentJoinedByPlayer implements Event<TournamentJoiningState> {
+public class TournamentJoinedByPlayer implements TournamentJoiningEvent {
     UUID playerId;
     int playersBefore;
     int playersAfter;

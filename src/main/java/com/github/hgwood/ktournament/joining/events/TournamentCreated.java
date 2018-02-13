@@ -1,11 +1,11 @@
-package com.github.hgwood.ktournament.events;
+package com.github.hgwood.ktournament.joining.events;
 
-import com.github.hgwood.ktournament.Event;
-import com.github.hgwood.ktournament.TournamentJoiningState;
+import com.github.hgwood.ktournament.joining.TournamentJoiningEvent;
+import com.github.hgwood.ktournament.joining.TournamentJoiningState;
 import lombok.Value;
 
 @Value
-public class TournamentCreated implements Event<TournamentJoiningState> {
+public class TournamentCreated implements TournamentJoiningEvent {
     int maxPlayers;
 
     @Override

@@ -1,7 +1,9 @@
 package com.github.hgwood.ktournament;
 
-import com.github.hgwood.ktournament.commands.JoinTournament;
-import com.github.hgwood.ktournament.commands.OpenTournamentToPlayers;
+import com.github.hgwood.ktournament.framework.CommandEnvelope;
+import com.github.hgwood.ktournament.joining.TournamentJoiningState;
+import com.github.hgwood.ktournament.joining.commands.JoinTournament;
+import com.github.hgwood.ktournament.joining.commands.OpenTournamentToPlayers;
 import io.vavr.collection.HashMap;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;

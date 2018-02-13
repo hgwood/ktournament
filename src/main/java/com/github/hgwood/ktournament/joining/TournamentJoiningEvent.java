@@ -1,11 +1,12 @@
-package com.github.hgwood.ktournament;
+package com.github.hgwood.ktournament.joining;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.github.hgwood.ktournament.events.AttemptToOverwriteAnExistingTournament;
-import com.github.hgwood.ktournament.events.TournamentCreated;
-import com.github.hgwood.ktournament.events.TournamentIsFull;
-import com.github.hgwood.ktournament.events.TournamentJoinedByPlayer;
+import com.github.hgwood.ktournament.framework.Event;
+import com.github.hgwood.ktournament.joining.events.AttemptToOverwriteAnExistingTournament;
+import com.github.hgwood.ktournament.joining.events.TournamentCreated;
+import com.github.hgwood.ktournament.joining.events.TournamentIsFull;
+import com.github.hgwood.ktournament.joining.events.TournamentJoinedByPlayer;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -14,8 +15,6 @@ import com.github.hgwood.ktournament.events.TournamentJoinedByPlayer;
     @JsonSubTypes.Type(name = "TOURNAMENT_IS_FULL", value = TournamentIsFull.class),
     @JsonSubTypes.Type(name = "ATTEMPT_TO_OVERWRITE_AN_EXISTING_TOURNAMENT", value = AttemptToOverwriteAnExistingTournament.class)
 })
-public interface Event<T extends State> {
-    default T evolve(T state) {
-        return state;
-    }
+public interface TournamentJoiningEvent extends Event<TournamentJoiningState> {
+
 }

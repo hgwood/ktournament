@@ -2,6 +2,8 @@ package com.github.hgwood.ktournament;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.hgwood.ktournament.framework.*;
+import com.github.hgwood.ktournament.joining.TournamentJoiningState;
 import com.github.hgwood.ktournament.support.json.JsonSerde;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
@@ -30,7 +32,6 @@ public class KTournamentJoinLogic {
         streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "wordcount-lambda-example");
         streamsConfiguration.put(StreamsConfig.CLIENT_ID_CONFIG, "wordcount-lambda-example-client");
         streamsConfiguration.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        streamsConfiguration.put(StreamsConfig.DEFAULT_DESERIALIZATION_EXCEPTION_HANDLER_CLASS_CONFIG, DeserExceptionHandler.class);
         final StreamsBuilder builder = new StreamsBuilder();
 
         buildTopology(builder);

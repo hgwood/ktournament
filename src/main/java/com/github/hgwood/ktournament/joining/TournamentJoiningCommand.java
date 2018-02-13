@@ -1,18 +1,16 @@
-package com.github.hgwood.ktournament;
+package com.github.hgwood.ktournament.joining;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.github.hgwood.ktournament.commands.JoinTournament;
-import com.github.hgwood.ktournament.commands.OpenTournamentToPlayers;
-import io.vavr.collection.List;
+import com.github.hgwood.ktournament.framework.Command;
+import com.github.hgwood.ktournament.joining.commands.JoinTournament;
+import com.github.hgwood.ktournament.joining.commands.OpenTournamentToPlayers;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "OPEN_TOURNAMENT_TO_PLAYERS", value = OpenTournamentToPlayers.class),
     @JsonSubTypes.Type(name = "JOIN_TOURNAMENT", value = JoinTournament.class)
 })
-public interface Command<T extends State> {
-    default List<Event> decide(T state) {
-        return List.empty();
-    }
+public interface TournamentJoiningCommand extends Command<TournamentJoiningState> {
+
 }

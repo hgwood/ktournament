@@ -1,17 +1,19 @@
-package com.github.hgwood.ktournament.commands;
+package com.github.hgwood.ktournament.joining.commands;
 
-import com.github.hgwood.ktournament.*;
-import com.github.hgwood.ktournament.events.CommandNotApplicableToNonExistantEntity;
-import com.github.hgwood.ktournament.events.TournamentIsFull;
-import com.github.hgwood.ktournament.events.TournamentIsNotAcceptingPlayers;
-import com.github.hgwood.ktournament.events.TournamentJoinedByPlayer;
+import com.github.hgwood.ktournament.framework.Event;
+import com.github.hgwood.ktournament.joining.TournamentJoiningCommand;
+import com.github.hgwood.ktournament.joining.TournamentJoiningState;
+import com.github.hgwood.ktournament.joining.events.CommandNotApplicableToNonExistantEntity;
+import com.github.hgwood.ktournament.joining.events.TournamentIsFull;
+import com.github.hgwood.ktournament.joining.events.TournamentIsNotAcceptingPlayers;
+import com.github.hgwood.ktournament.joining.events.TournamentJoinedByPlayer;
 import io.vavr.collection.List;
 import lombok.Value;
 
 import java.util.UUID;
 
 @Value
-public class JoinTournament implements Command<TournamentJoiningState> {
+public class JoinTournament implements TournamentJoiningCommand {
     UUID playerId;
 
     @Override
