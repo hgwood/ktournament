@@ -7,14 +7,20 @@ import com.github.hgwood.ktournament.joining.TournamentJoiningState;
 import com.github.hgwood.ktournament.support.json.JsonSerde;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.streams.*;
-import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.state.*;
+import org.apache.kafka.streams.Consumed;
+import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.processor.ProcessorSupplier;
+import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
+import org.apache.kafka.streams.state.KeyValueStore;
+import org.apache.kafka.streams.state.StoreBuilder;
+import org.apache.kafka.streams.state.Stores;
 
 import java.util.Properties;
 import java.util.UUID;
-
-import static java.lang.String.format;
 
 public class KTournamentJoinLogic {
 
@@ -59,19 +65,29 @@ public class KTournamentJoinLogic {
     }
 
     private static void buildTopology(StreamsBuilder builder) {
-        KeyValueBytesStoreSupplier storeSupplier = Stores.persistentKeyValueStore("tournament-joining-store");
-        StoreBuilder<KeyValueStore<UUID, StateEnvelope<TournamentJoiningState>>> store = Stores.keyValueStoreBuilder(storeSupplier, uuidSerde, stateSerde);
-        builder.addStateStore(store);
+        StoreBuilder<KeyValueStore<UUID, StateEnvelope<TournamentJoiningState>>> store =
+            Stores.keyValueStoreBuilder(
+                Stores.persistentKeyValueStore("tournament-joining-store"),
+                uuidSerde,
+                stateSerde
+            );
 
-        KeyValueBytesStoreSupplier bufferSupplier = Stores.persistentKeyValueStore("tournament-joining-sync-buffer");
-        StoreBuilder<KeyValueStore<UUID, EventEnvelope<TournamentJoiningState>>> buffer = Stores.keyValueStoreBuilder(bufferSupplier, uuidSerde, eventSerde);
-        builder.addStateStore(buffer);
+        StoreBuilder<KeyValueStore<UUID, EventEnvelope<TournamentJoiningState>>> buffer =
+            Stores.keyValueStoreBuilder(
+                Stores.persistentKeyValueStore("tournament-joining-sync-buffer"),
+                uuidSerde,
+                eventSerde
+            );
 
-        KStream<UUID, CommandEnvelope<TournamentJoiningState>> commands = builder.stream("tournament-joining-commands", Consumed.with(uuidSerde, commandSerde));
-        KStream<UUID, EventEnvelope<TournamentJoiningState>> syncEvents = commands.transform(() -> new Decide<>(), store.name());
-        KStream<UUID, EventEnvelope<TournamentJoiningState>> asyncEvents = builder.stream("tournament-joining-events", Consumed.with(uuidSerde, eventSerde));
-        syncEvents.merge(asyncEvents).process(() -> new Evolve<>(), store.name(), buffer.name());
-        syncEvents.to("tournament-joining-events", Produced.with(uuidSerde, eventSerde));
+        new EventSourcingTopology<>(
+            store,
+            buffer,
+            uuidSerde,
+            "tournament-joining-commands",
+            commandSerde,
+            "tournament-joining-events",
+            eventSerde
+        ).build(builder);
     }
 
 }
