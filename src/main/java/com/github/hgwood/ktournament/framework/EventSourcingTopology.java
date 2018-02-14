@@ -27,13 +27,6 @@ public class EventSourcingTopology<S extends State> {
         builder.addStateStore(this.store);
         builder.addStateStore(this.buffer);
 
-        ProcessorSupplier<UUID, EventEnvelope<S>> eventProcessor =
-            () -> new Deduplicate<>(
-                new Evolve<>(),
-                buffer.name(),
-                (entityId, event) -> event.getId()
-            );
-
         KStream<UUID, CommandEnvelope<S>> commands =
             builder.stream(
                 commandTopicName,
@@ -46,13 +39,10 @@ public class EventSourcingTopology<S extends State> {
                 Consumed.with(entityIdSerde, eventSerde)
             );
 
-        KStream<UUID, EventEnvelope<S>> syncEvents =
-            commands.transform(() -> new Decide<>(), store.name());
-        syncEvents.merge(asyncEvents).process(eventProcessor, store.name());
-        syncEvents.to(eventTopicName, Produced.with(entityIdSerde, eventSerde));
+        connect(commands, asyncEvents, events -> events.to(eventTopicName, Produced.with(entityIdSerde, eventSerde)));
     }
 
-    public void connect(
+    private void connect(
         KStream<UUID, CommandEnvelope<S>> commandStream,
         KStream<UUID, EventEnvelope<S>> eventStream,
         Consumer<KStream<UUID, EventEnvelope<S>>> eventSink
