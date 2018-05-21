@@ -1,9 +1,11 @@
 package com.github.hgwood.ktournament.framework;
 
-import io.vavr.collection.List;
+import java.util.List;
+
+import static java.util.Collections.emptyList;
 
 public interface Command<T extends State> {
-    default List<Event> decide(T state) {
-        return List.empty();
+    default List<Event<T>> decide(T state) {
+        return emptyList();
     }
 }

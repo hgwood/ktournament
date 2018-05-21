@@ -27,7 +27,8 @@ public class Decide<T extends State> implements Transformer<UUID, CommandEnvelop
         StateEnvelope<T> state = this.store.get(entityId);
         // payload might be null here! every command has to check for it
         command.getPayload().decide(state == null ? null : state.getPayload())
-            .map(event -> new EventEnvelope<T>(UUID.randomUUID(), command.getId(), event))
+            .stream()
+            .map(event -> new EventEnvelope<>(UUID.randomUUID(), command.getId(), event))
             .forEach(event -> this.context.forward(entityId, event));
         // produce a command report with: entity state id, produced event ids => includes this in events
         return null;
