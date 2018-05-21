@@ -9,8 +9,7 @@ import java.util.UUID;
 
 import static java.lang.String.format;
 
-public class Decide<T extends State> implements Transformer<UUID, CommandEnvelope<T>, KeyValue<UUID,
-    EventEnvelope<T>>> {
+public class Decide<T extends State> implements Transformer<UUID, CommandEnvelope<T>, KeyValue<UUID, EventEnvelope<T>>> {
     private ProcessorContext context;
     private KeyValueStore<UUID, StateEnvelope<T>> store;
 
