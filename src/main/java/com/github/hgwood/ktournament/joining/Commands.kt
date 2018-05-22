@@ -14,7 +14,7 @@ import java.util.*
 )
 interface TournamentJoiningCommand : Command<TournamentJoiningState>
 
-data class JoinTournament(private val playerId: UUID) : TournamentJoiningCommand {
+class JoinTournament(private val playerId: UUID) : TournamentJoiningCommand {
   override fun decide(state: TournamentJoiningState?): List<Event<TournamentJoiningState>> = when {
     state == null -> listOf(CommandNotApplicableToNonExistentEntity())
     !state.acceptingPlayers -> listOf(TournamentIsNotAcceptingPlayers())
@@ -33,7 +33,7 @@ data class JoinTournament(private val playerId: UUID) : TournamentJoiningCommand
   }
 }
 
-data class OpenTournamentToPlayers(private val maxPlayers: Int) : TournamentJoiningCommand {
+class OpenTournamentToPlayers(private val maxPlayers: Int) : TournamentJoiningCommand {
   override fun decide(state: TournamentJoiningState?): List<Event<TournamentJoiningState>> = when (state) {
       null -> listOf(TournamentCreated(maxPlayers))
       else -> listOf(AttemptToOverwriteAnExistingTournament())
