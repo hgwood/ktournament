@@ -8,13 +8,17 @@ import java.util.*
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes(
-  JsonSubTypes.Type(name = "OPEN_TOURNAMENT_TO_PLAYERS", value = OpenTournamentToPlayers::class),
-  JsonSubTypes.Type(name = "JOIN_TOURNAMENT", value = JoinTournament::class),
-  JsonSubTypes.Type(name = "START_TOURNAMENT", value = StartTournament::class)
+  JsonSubTypes.Type(name = OpenTournamentToPlayers.NAME, value = OpenTournamentToPlayers::class),
+  JsonSubTypes.Type(name = JoinTournament.NAME, value = JoinTournament::class),
+  JsonSubTypes.Type(name = StartTournament.NAME, value = StartTournament::class)
 )
 interface TournamentJoiningCommand : Command<TournamentJoiningState>
 
 class JoinTournament(private val playerId: UUID) : TournamentJoiningCommand {
+  companion object {
+    const val NAME = "JOIN_TOURNAMENT"
+  }
+
   override fun decide(state: TournamentJoiningState?): List<Event<TournamentJoiningState>> = when {
     state == null -> listOf(CommandNotApplicableToNonExistentEntity())
     !state.acceptingPlayers -> listOf(TournamentIsNotAcceptingPlayers())
@@ -34,6 +38,10 @@ class JoinTournament(private val playerId: UUID) : TournamentJoiningCommand {
 }
 
 class OpenTournamentToPlayers(private val maxPlayers: Int) : TournamentJoiningCommand {
+  companion object {
+      const val NAME = "OPEN_TOURNAMENT_TO_PLAYERS"
+  }
+
   override fun decide(state: TournamentJoiningState?): List<Event<TournamentJoiningState>> = when (state) {
       null -> listOf(TournamentCreated(maxPlayers))
       else -> listOf(AttemptToOverwriteAnExistingTournament())
@@ -42,6 +50,7 @@ class OpenTournamentToPlayers(private val maxPlayers: Int) : TournamentJoiningCo
 
 class StartTournament : TournamentJoiningCommand {
   companion object {
+    const val NAME = "START_TOURNAMENT"
     const val MINIMUM_PLAYERS_REQUIRED_TO_START = 2
   }
 

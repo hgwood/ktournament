@@ -21,7 +21,7 @@ class CommandNotApplicableToNonExistentEntity : TournamentJoiningEvent
 class NotEnoughPlayersInTournamentToStart(val playersInTournament: Int) : TournamentJoiningEvent
 
 class TournamentCreated(private val maxPlayers: Int) : TournamentJoiningEvent {
-  override fun evolve(state: TournamentJoiningState): TournamentJoiningState =
+  override fun evolve(state: TournamentJoiningState?): TournamentJoiningState =
     TournamentJoiningState(
       acceptingPlayers = true,
       playersJoined = 0,
@@ -43,11 +43,11 @@ class TournamentJoinedByPlayer(
   val playersAfter: Int,
   val tournamentIsNowFull: Boolean
 ) : TournamentJoiningEvent {
-  override fun evolve(state: TournamentJoiningState): TournamentJoiningState =
-    state.copy(playersJoined = this.playersAfter)
+  override fun evolve(state: TournamentJoiningState?): TournamentJoiningState =
+    state!!.copy(playersJoined = this.playersAfter)
 }
 
 class TournamentStarted : TournamentJoiningEvent {
-  override fun evolve(state: TournamentJoiningState): TournamentJoiningState =
-    state.copy(acceptingPlayers = false)
+  override fun evolve(state: TournamentJoiningState?): TournamentJoiningState =
+    state!!.copy(acceptingPlayers = false)
 }
