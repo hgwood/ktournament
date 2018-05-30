@@ -1,0 +1,22 @@
+{
+  "namespace": "com.github.hgwood.ktournament.data",
+  "name": "PlayerJoinedTournament",
+  "type": "record",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "payload",
+      "type": {
+        "name": "PlayerJoinedTournamentPayload",
+        "type": "record",
+        "fields": [
+          {"name": "tournamentId", "type": "string"},
+          {"name": "playerId", "type": "string"}
+        ]
+      }
+    }
+  ]
+}
