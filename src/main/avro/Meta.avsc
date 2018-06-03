@@ -1,0 +1,11 @@
+{
+  "namespace": "com.github.hgwood.ktournament2.data",
+  "name": "Meta",
+  "type": "record",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    }
+  ]
+}

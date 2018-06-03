@@ -1,0 +1,23 @@
+{
+  "namespace": "com.github.hgwood.ktournament2.data",
+  "name": "TournamentJoiningState",
+  "type": "record",
+  "fields": [
+    {
+      "name": "acceptingPlayers",
+      "type": "boolean"
+    },
+    {
+      "name": "playersJoined",
+      "type": "int"
+    },
+    {
+      "name": "maxPlayers",
+      "type": "int"
+    },
+    {
+      "name": "meta",
+      "type": "com.github.hgwood.ktournament2.data.Meta"
+    }
+  ]
+}

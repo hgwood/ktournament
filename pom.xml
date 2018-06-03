@@ -91,6 +91,11 @@
       <artifactId>kafka-streams-avro-serde</artifactId>
       <version>4.1.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.github.fge</groupId>
+      <artifactId>json-patch</artifactId>
+      <version>1.9</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -177,6 +182,9 @@
             <configuration>
               <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
               <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+              <imports>
+                <import>${project.basedir}/src/main/avro/Meta.avsc</import>
+              </imports>
             </configuration>
           </execution>
         </executions>
