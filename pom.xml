@@ -185,6 +185,7 @@
               <imports>
                 <import>${project.basedir}/src/main/avro/Meta.avsc</import>
               </imports>
+              <templateDirectory>src/main/resources/avro-generation-templates/</templateDirectory>
             </configuration>
           </execution>
         </executions>
