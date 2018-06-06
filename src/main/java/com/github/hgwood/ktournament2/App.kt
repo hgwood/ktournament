@@ -64,63 +64,57 @@ fun buildTopology(builder: StreamsBuilder) {
 
 }
 
-fun generatePatches(key: String?, value: SpecificRecord?, store: KeyValueStore<String, TournamentJoiningState>): List<JsonPatch> = when (value) {
+fun generatePatches(key: String?, value: SpecificRecord?, store: KeyValueStore<String, TournamentJoiningState>): JsonPatch = when (value) {
   is PlayerJoinedTournament -> {
     val state: TournamentJoiningState? = store.get(value.getTournamentId().toString())
-    if (state == null) emptyList()
-    else listOf(
-      JsonPatch.fromJson(
-        JsonNodeFactory.instance.arrayNode()
-          .addObject()
-          .put("op", "replace")
-          .put("path", "/${TournamentJoiningState.FIELD_playersJoined}")
-          .put("value", state.getPlayersJoined() + 1)
-      )
+    if (state == null) JsonPatch.fromJson(JsonNodeFactory.instance.arrayNode())
+    else JsonPatch.fromJson(
+      JsonNodeFactory.instance.arrayNode()
+        .addObject()
+        .put("op", "replace")
+        .put("path", "/${TournamentJoiningState.FIELD_playersJoined}")
+        .put("value", state.getPlayersJoined() + 1)
     )
   }
-  else -> emptyList()
-    /*listOf(
-      JsonPatch.fromJson(
-        JsonNodeFactory.instance.arrayNode()
-          .addObject()
-          .put("op", "add")
-          .put("path", "/")
-          .set(
-            "value",
-            objectMapper.valueToTree(TournamentJoiningState()
-              .apply {
-                setAcceptingPlayers(true)
-                setMaxPlayers(8)
-                setPlayersJoined(0)
-              }
-            )
-          )
+  else -> JsonPatch.fromJson(JsonNodeFactory.instance.arrayNode())
+/*listOf(
+  JsonPatch.fromJson(
+    JsonNodeFactory.instance.arrayNode()
+      .addObject()
+      .put("op", "add")
+      .put("path", "/")
+      .set(
+        "value",
+        objectMapper.valueToTree(TournamentJoiningState()
+          .apply {
+            setAcceptingPlayers(true)
+            setMaxPlayers(8)
+            setPlayersJoined(0)
+          }
+        )
       )
-    )*/
-  }
+  )
+)*/
+}
 }
 
 class Decide<T> : Transformer<String, SpecificRecord, KeyValue<String, JsonPatch>> {
   private lateinit var context: ProcessorContext
   private lateinit var store: KeyValueStore<String, TournamentJoiningState>
 
-  override fun punctuate(timestamp: Long): KeyValue<String, JsonPatch> {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
+  override fun punctuate(timestamp: Long): KeyValue<String, JsonPatch>? = null
 
   override fun init(context: ProcessorContext) {
     this.context = context
-    this.store = context.getStateStore("tournament-joining-store") as KeyValueStore<String, TournamentJoiningState>
+    this.store = context.getStateStore(storeName) as KeyValueStore<String, TournamentJoiningState>
   }
 
   override fun transform(key: String?, value: SpecificRecord?): KeyValue<String, JsonPatch>? {
     generatePatches(key, value, this.store)
       .forEach { this.context.forward<String, JsonPatch>(key, it) }
-    // produce a command report with: entity state id, produced event ids => includes this in events
     return null
   }
 
   override fun close() {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
   }
 }
