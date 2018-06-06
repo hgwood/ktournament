@@ -64,10 +64,10 @@ fun buildTopology(builder: StreamsBuilder) {
 
 }
 
-fun generatePatches(key: String?, value: SpecificRecord?, store: KeyValueStore<String, TournamentJoiningState>): JsonPatch = when (value) {
+fun generatePatch(key: String?, value: SpecificRecord?, store: KeyValueStore<String, TournamentJoiningState>): JsonPatch? = when (value) {
   is PlayerJoinedTournament -> {
     val state: TournamentJoiningState? = store.get(value.getTournamentId().toString())
-    if (state == null) JsonPatch.fromJson(JsonNodeFactory.instance.arrayNode())
+    if (state == null) null // should fail here
     else JsonPatch.fromJson(
       JsonNodeFactory.instance.arrayNode()
         .addObject()
@@ -76,7 +76,7 @@ fun generatePatches(key: String?, value: SpecificRecord?, store: KeyValueStore<S
         .put("value", state.getPlayersJoined() + 1)
     )
   }
-  else -> JsonPatch.fromJson(JsonNodeFactory.instance.arrayNode())
+  else -> null // should fail here
 /*listOf(
   JsonPatch.fromJson(
     JsonNodeFactory.instance.arrayNode()
@@ -96,7 +96,7 @@ fun generatePatches(key: String?, value: SpecificRecord?, store: KeyValueStore<S
   )
 )*/
 }
-}
+
 
 class Decide<T> : Transformer<String, SpecificRecord, KeyValue<String, JsonPatch>> {
   private lateinit var context: ProcessorContext
@@ -110,9 +110,8 @@ class Decide<T> : Transformer<String, SpecificRecord, KeyValue<String, JsonPatch
   }
 
   override fun transform(key: String?, value: SpecificRecord?): KeyValue<String, JsonPatch>? {
-    generatePatches(key, value, this.store)
-      .forEach { this.context.forward<String, JsonPatch>(key, it) }
-    return null
+    // how to ack or fail commands?
+    return generatePatch(key, value, this.store)?.let { KeyValue.pair(key, it) }
   }
 
   override fun close() {
